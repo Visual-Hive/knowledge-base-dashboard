@@ -123,11 +123,7 @@ export default function KnowledgeBasesPage() {
   };
 
   const handleViewDocuments = (kb: KnowledgeBase) => {
-    console.log('View documents for:', kb.title);
-    toast({
-      title: 'Opening documents',
-      description: `Loading documents for "${kb.title}"...`,
-    });
+    window.location.href = `/kb/${kb.id}/documents`;
   };
 
   return (

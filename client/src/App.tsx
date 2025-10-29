@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import KnowledgeBasesPage from "@/pages/KnowledgeBasesPage";
+import DocumentsPage from "@/pages/DocumentsPage";
 import SearchPage from "@/pages/SearchPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/not-found";
@@ -36,6 +37,13 @@ function Router() {
         <ProtectedRoute>
           <AppLayout>
             <KnowledgeBasesPage />
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/kb/:id/documents">
+        <ProtectedRoute>
+          <AppLayout>
+            <DocumentsPage />
           </AppLayout>
         </ProtectedRoute>
       </Route>
