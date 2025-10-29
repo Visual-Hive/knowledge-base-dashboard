@@ -16,6 +16,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface KnowledgeBase {
   id: string;
@@ -157,8 +162,12 @@ export default function KnowledgeBasesPage() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog} data-testid="button-create-kb">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button 
+              onClick={openCreateDialog} 
+              data-testid="button-create-kb"
+              aria-label="Create new knowledge base"
+            >
+              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
               New Knowledge Base
             </Button>
           </DialogTrigger>
@@ -186,10 +195,19 @@ export default function KnowledgeBasesPage() {
                   onChange={(e) => handleTitleChange(e.target.value)}
                   data-testid="input-kb-title"
                   className={titleError ? 'border-destructive' : ''}
+                  aria-invalid={!!titleError}
+                  aria-describedby={titleError ? 'kb-title-error' : undefined}
+                  aria-required="true"
                 />
                 <div className="flex items-center justify-between">
                   {titleError && (
-                    <p className="text-xs text-destructive" data-testid="error-kb-title">
+                    <p 
+                      id="kb-title-error"
+                      className="text-xs text-destructive" 
+                      data-testid="error-kb-title"
+                      role="alert"
+                      aria-live="polite"
+                    >
                       {titleError}
                     </p>
                   )}
@@ -273,8 +291,12 @@ export default function KnowledgeBasesPage() {
           <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
             Create your first knowledge base to start organizing your documentation and articles.
           </p>
-          <Button onClick={openCreateDialog} data-testid="button-create-first">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={openCreateDialog} 
+            data-testid="button-create-first"
+            aria-label="Create your first knowledge base"
+          >
+            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
             New Knowledge Base
           </Button>
         </div>
@@ -309,26 +331,42 @@ export default function KnowledgeBasesPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2 pt-4 border-t border-card-border">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => openEditDialog(kb)}
-                  data-testid={`button-edit-${kb.id}`}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleViewDocuments(kb)}
-                  data-testid={`button-view-${kb.id}`}
-                >
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  View Documents
-                </Button>
+              <CardFooter className="flex gap-2 pt-4 border-t border-card-border flex-wrap">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => openEditDialog(kb)}
+                      data-testid={`button-edit-${kb.id}`}
+                      aria-label={`Edit ${kb.title}`}
+                    >
+                      <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Edit
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit knowledge base details</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleViewDocuments(kb)}
+                      data-testid={`button-view-${kb.id}`}
+                      aria-label={`View documents in ${kb.title}`}
+                    >
+                      <FolderOpen className="w-4 h-4 mr-2" aria-hidden="true" />
+                      View Documents
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Browse {kb.documentCount} documents</p>
+                  </TooltipContent>
+                </Tooltip>
               </CardFooter>
             </Card>
           ))}

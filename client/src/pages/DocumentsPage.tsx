@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ChevronRight, Home } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -510,15 +511,26 @@ export default function DocumentsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => setLocation('/')}
-          className="mb-4"
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Knowledge Bases
-        </Button>
+        {/* Breadcrumb navigation */}
+        <nav aria-label="Breadcrumb" className="mb-4">
+          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+            <li className="flex items-center gap-2">
+              <button
+                onClick={() => setLocation('/')}
+                className="hover:text-foreground transition-colors flex items-center gap-1"
+                data-testid="breadcrumb-home"
+                aria-label="Navigate to home"
+              >
+                <Home className="w-4 h-4" aria-hidden="true" />
+                Knowledge Bases
+              </button>
+            </li>
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
+            <li className="text-foreground font-medium" aria-current="page">
+              {kb.title}
+            </li>
+          </ol>
+        </nav>
 
         <div className="flex items-start justify-between mb-6 pb-6 border-b border-border flex-wrap gap-4">
           <div>
