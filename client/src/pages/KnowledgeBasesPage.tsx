@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { Plus, BookOpen, FileText, Clock, Edit, FolderOpen } from 'lucide-react';
+import { Plus, BookOpen, FileText, Clock, Edit, FolderOpen, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -35,6 +35,7 @@ export default function KnowledgeBasesPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [titleError, setTitleError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Simulate initial data loading
   useEffect(() => {
@@ -98,11 +99,16 @@ export default function KnowledgeBasesPage() {
     setDescription(value.slice(0, 200));
   };
 
-  const handleSaveKB = () => {
+  const handleSaveKB = async () => {
     if (!title.trim()) {
       setTitleError('Name is required');
       return;
     }
+
+    setIsSaving(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     if (editingKB) {
       setKnowledgeBases(knowledgeBases.map(kb => 
@@ -132,6 +138,7 @@ export default function KnowledgeBasesPage() {
     setTitle('');
     setDescription('');
     setTitleError('');
+    setIsSaving(false);
     setDialogOpen(false);
   };
 
@@ -214,8 +221,19 @@ export default function KnowledgeBasesPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleSaveKB} data-testid="button-submit">
-                {editingKB ? 'Save Changes' : 'Create'}
+              <Button 
+                onClick={handleSaveKB} 
+                disabled={isSaving}
+                data-testid="button-submit"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {editingKB ? 'Saving...' : 'Creating...'}
+                  </>
+                ) : (
+                  editingKB ? 'Save Changes' : 'Create'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
