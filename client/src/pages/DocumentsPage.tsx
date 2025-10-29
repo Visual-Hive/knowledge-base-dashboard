@@ -34,6 +34,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import AddDocumentModal from '@/components/AddDocumentModal';
 
 interface Document {
   id: string;
@@ -47,18 +48,18 @@ interface Document {
 type SortField = 'filename' | 'type' | 'createdBy' | 'createdDate' | 'lastUpdated';
 type SortDirection = 'asc' | 'desc' | null;
 
-const mockKnowledgeBases = {
-  '1': { title: 'Sales Information', documentCount: 23 },
-  '2': { title: 'N8N Workflows', documentCount: 15 },
-  '3': { title: 'Investor Relations', documentCount: 8 },
-};
+const mockKnowledgeBases = [
+  { id: '1', title: 'Sales Information', documentCount: 23 },
+  { id: '2', title: 'N8N Workflows', documentCount: 15 },
+  { id: '3', title: 'Investor Relations', documentCount: 8 },
+];
 
 export default function DocumentsPage() {
   const [, params] = useRoute('/kb/:id/documents');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const kbId = params?.id || '1';
-  const kb = mockKnowledgeBases[kbId as keyof typeof mockKnowledgeBases] || mockKnowledgeBases['1'];
+  const kb = mockKnowledgeBases.find(k => k.id === kbId) || mockKnowledgeBases[0];
 
   const [documents, setDocuments] = useState<Document[]>([
     {
@@ -117,6 +118,7 @@ export default function DocumentsPage() {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [addDocumentOpen, setAddDocumentOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -235,10 +237,11 @@ export default function DocumentsPage() {
   };
 
   const handleUpload = () => {
-    toast({
-      title: 'Upload document',
-      description: 'File upload functionality will be implemented here.',
-    });
+    setAddDocumentOpen(true);
+  };
+
+  const handleDocumentAdded = (newDocument: any) => {
+    setDocuments([newDocument, ...documents]);
   };
 
   return (
@@ -504,6 +507,14 @@ export default function DocumentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AddDocumentModal
+        open={addDocumentOpen}
+        onOpenChange={setAddDocumentOpen}
+        currentKbId={kbId}
+        knowledgeBases={mockKnowledgeBases}
+        onDocumentAdded={handleDocumentAdded}
+      />
     </div>
   );
 }
