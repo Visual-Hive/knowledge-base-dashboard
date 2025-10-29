@@ -56,21 +56,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
               const Icon = item.icon;
               const isActive = location === item.path;
               return (
-                <Link key={item.path} href={item.path}>
-                  <a
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                      ${isActive 
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                        : 'text-sidebar-foreground hover-elevate active-elevate-2'
-                      }
-                    `}
-                    onClick={() => setMobileMenuOpen(false)}
-                    data-testid={`link-${item.label.toLowerCase().replace(' ', '-')}`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </a>
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`
+                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                    ${isActive 
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
+                      : 'text-sidebar-foreground hover-elevate active-elevate-2'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                  data-testid={`link-${item.label.toLowerCase().replace(' ', '-')}`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
                 </Link>
               );
             })}
