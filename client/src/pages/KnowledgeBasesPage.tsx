@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Plus, BookOpen, FileText, Clock, Edit, FolderOpen } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface KnowledgeBase {
   id: string;
@@ -26,35 +27,47 @@ interface KnowledgeBase {
 
 export default function KnowledgeBasesPage() {
   const { toast } = useToast();
-  const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([
-    {
-      id: '1',
-      title: 'Sales Information',
-      description: 'Product pricing and sales materials',
-      documentCount: 23,
-      lastUpdated: '2 hours ago',
-    },
-    {
-      id: '2',
-      title: 'N8N Workflows',
-      description: 'Custom nodes and automation guides',
-      documentCount: 15,
-      lastUpdated: '1 day ago',
-    },
-    {
-      id: '3',
-      title: 'Investor Relations',
-      description: 'Company information for potential investors',
-      documentCount: 8,
-      lastUpdated: '3 days ago',
-    },
-  ]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingKB, setEditingKB] = useState<KnowledgeBase | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [titleError, setTitleError] = useState('');
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const loadData = async () => {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setKnowledgeBases([
+        {
+          id: '1',
+          title: 'Sales Information',
+          description: 'Product pricing and sales materials',
+          documentCount: 23,
+          lastUpdated: '2 hours ago',
+        },
+        {
+          id: '2',
+          title: 'N8N Workflows',
+          description: 'Custom nodes and automation guides',
+          documentCount: 15,
+          lastUpdated: '1 day ago',
+        },
+        {
+          id: '3',
+          title: 'Investor Relations',
+          description: 'Company information for potential investors',
+          documentCount: 8,
+          lastUpdated: '3 days ago',
+        },
+      ]);
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
 
   const openCreateDialog = () => {
     setEditingKB(null);
@@ -209,7 +222,31 @@ export default function KnowledgeBasesPage() {
         </Dialog>
       </div>
 
-      {knowledgeBases.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} data-testid={`skeleton-kb-${i}`}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-2">
+                <div className="flex items-center gap-3 w-full">
+                  <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                  <Skeleton className="h-6 flex-1" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pb-4">
+                <Skeleton className="h-10 w-full" />
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </CardContent>
+              <CardFooter className="gap-2 flex-wrap">
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 w-9" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : knowledgeBases.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <BookOpen className="w-8 h-8 text-muted-foreground" />

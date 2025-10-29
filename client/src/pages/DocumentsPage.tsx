@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
   Download,
   ExternalLink,
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -77,56 +78,8 @@ export default function DocumentsPage() {
   const kbId = params?.id || '1';
   const kb = mockKnowledgeBases.find(k => k.id === kbId) || mockKnowledgeBases[0];
 
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      filename: 'pricing-guide.pdf',
-      type: 'PDF',
-      createdBy: 'admin@visualhive.com',
-      createdDate: '2024-10-15',
-      lastUpdated: '2024-10-20',
-    },
-    {
-      id: '2',
-      filename: 'product-overview.csv',
-      type: 'CSV',
-      createdBy: 'sales@visualhive.com',
-      createdDate: '2024-10-10',
-      lastUpdated: '2024-10-25',
-    },
-    {
-      id: '3',
-      filename: 'company-intro',
-      type: 'Text Content',
-      createdBy: 'marketing@visualhive.com',
-      createdDate: '2024-09-28',
-      lastUpdated: '2024-10-22',
-    },
-    {
-      id: '4',
-      filename: 'sales-playbook.pdf',
-      type: 'PDF',
-      createdBy: 'admin@visualhive.com',
-      createdDate: '2024-10-05',
-      lastUpdated: '2024-10-18',
-    },
-    {
-      id: '5',
-      filename: 'customer-data.csv',
-      type: 'CSV',
-      createdBy: 'sales@visualhive.com',
-      createdDate: '2024-09-20',
-      lastUpdated: '2024-10-12',
-    },
-    {
-      id: '6',
-      filename: 'faq-content',
-      type: 'Text Content',
-      createdBy: 'marketing@visualhive.com',
-      createdDate: '2024-10-01',
-      lastUpdated: '2024-10-26',
-    },
-  ]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [documents, setDocuments] = useState<Document[]>([]);
 
   const [filenameSearch, setFilenameSearch] = useState('');
   const [contentSearch, setContentSearch] = useState('');
@@ -152,6 +105,65 @@ export default function DocumentsPage() {
   const [newSearchName, setNewSearchName] = useState('');
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const itemsPerPage = 10;
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const loadData = async () => {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setDocuments([
+        {
+          id: '1',
+          filename: 'pricing-guide.pdf',
+          type: 'PDF',
+          createdBy: 'admin@visualhive.com',
+          createdDate: '2024-10-15',
+          lastUpdated: '2024-10-20',
+        },
+        {
+          id: '2',
+          filename: 'product-overview.csv',
+          type: 'CSV',
+          createdBy: 'sales@visualhive.com',
+          createdDate: '2024-10-10',
+          lastUpdated: '2024-10-25',
+        },
+        {
+          id: '3',
+          filename: 'company-intro',
+          type: 'Text Content',
+          createdBy: 'marketing@visualhive.com',
+          createdDate: '2024-09-28',
+          lastUpdated: '2024-10-22',
+        },
+        {
+          id: '4',
+          filename: 'sales-playbook.pdf',
+          type: 'PDF',
+          createdBy: 'admin@visualhive.com',
+          createdDate: '2024-10-05',
+          lastUpdated: '2024-10-18',
+        },
+        {
+          id: '5',
+          filename: 'customer-data.csv',
+          type: 'CSV',
+          createdBy: 'sales@visualhive.com',
+          createdDate: '2024-09-20',
+          lastUpdated: '2024-10-12',
+        },
+        {
+          id: '6',
+          filename: 'faq-content',
+          type: 'Text Content',
+          createdBy: 'marketing@visualhive.com',
+          createdDate: '2024-10-01',
+          lastUpdated: '2024-10-26',
+        },
+      ]);
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
 
   const handleFilenameSearch = (value: string) => {
     setFilenameSearch(value);
@@ -903,7 +915,36 @@ export default function DocumentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedDocuments.map((doc) => (
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i} data-testid={`skeleton-row-${i}`}>
+                      <TableCell>
+                        <Skeleton className="w-4 h-4" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-48" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-24" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Skeleton className="h-9 w-9" />
+                          <Skeleton className="h-9 w-9" />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : paginatedDocuments.map((doc) => (
                   <TableRow key={doc.id} data-testid={`row-document-${doc.id}`}>
                     <TableCell>
                       <input

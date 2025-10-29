@@ -26,6 +26,7 @@ import {
 import { Upload, X, FileText, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from './LoadingSpinner';
+import UploadProgressModal from './UploadProgressModal';
 
 interface KnowledgeBase {
   id: string;
@@ -75,6 +76,7 @@ export default function AddDocumentModal({
   const [showPreview, setShowPreview] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -194,7 +196,29 @@ export default function AddDocumentModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  // Simulate realistic upload progress
+  const simulateUploadProgress = () => {
+    return new Promise<void>((resolve) => {
+      setUploadProgress(0);
+      let progress = 0;
+      
+      const interval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // Random increment between 5-20
+        
+        if (progress >= 100) {
+          setUploadProgress(100);
+          clearInterval(interval);
+          setTimeout(() => {
+            resolve();
+          }, 500); // Show 100% for a moment
+        } else {
+          setUploadProgress(Math.min(progress, 95)); // Cap at 95% until complete
+        }
+      }, 200); // Update every 200ms
+    });
+  };
+
+  const handleSubmit = async () => {
     if (!validate()) {
       return;
     }
@@ -210,7 +234,8 @@ export default function AddDocumentModal({
     setIsUploading(true);
     setShowConfirmDialog(false);
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulate upload progress
+    await simulateUploadProgress();
 
     const fileType = activeTab === 'upload'
       ? selectedFile?.name.split('.').pop()?.toUpperCase() || editDocument?.type || 'FILE'
@@ -547,6 +572,12 @@ export default function AddDocumentModal({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UploadProgressModal 
+        open={isUploading} 
+        progress={uploadProgress}
+        filename={documentName || selectedFile?.name || 'document'}
+      />
     </>
   );
 }
