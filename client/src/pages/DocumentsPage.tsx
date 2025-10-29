@@ -35,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AddDocumentModal from '@/components/AddDocumentModal';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 interface Document {
   id: string;
@@ -43,6 +44,9 @@ interface Document {
   createdBy: string;
   createdDate: string;
   lastUpdated: string;
+  description?: string;
+  knowledgeBases?: string[];
+  textContent?: string;
 }
 
 type SortField = 'filename' | 'type' | 'createdBy' | 'createdDate' | 'lastUpdated';
@@ -119,10 +123,10 @@ export default function DocumentsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [addDocumentOpen, setAddDocumentOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [editFilename, setEditFilename] = useState('');
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const itemsPerPage = 10;
 
   const handleFilenameSearch = (value: string) => {
@@ -200,28 +204,18 @@ export default function DocumentsPage() {
   };
 
   const handleEditDocument = (doc: Document) => {
-    setSelectedDocument(doc);
-    setEditFilename(doc.filename);
-    setEditDialogOpen(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (selectedDocument && editFilename.trim()) {
-      setDocuments(documents.map(doc =>
-        doc.id === selectedDocument.id
-          ? { ...doc, filename: editFilename, lastUpdated: new Date().toISOString().split('T')[0] }
-          : doc
-      ));
-      toast({
-        title: 'Document updated',
-        description: 'The document has been updated successfully.',
-      });
-      setEditDialogOpen(false);
-    }
+    setEditingDocument(doc);
+    setAddDocumentOpen(true);
   };
 
   const handleDeleteDocument = (doc: Document) => {
     setSelectedDocument(doc);
+    setSelectedDocuments(new Set());
+    setDeleteDialogOpen(true);
+  };
+
+  const handleBulkDelete = () => {
+    setSelectedDocument(null);
     setDeleteDialogOpen(true);
   };
 
@@ -232,7 +226,33 @@ export default function DocumentsPage() {
         title: 'Document deleted',
         description: 'The document has been removed successfully.',
       });
-      setDeleteDialogOpen(false);
+    } else if (selectedDocuments.size > 0) {
+      setDocuments(documents.filter(doc => !selectedDocuments.has(doc.id)));
+      toast({
+        title: 'Documents deleted',
+        description: `${selectedDocuments.size} documents have been removed successfully.`,
+      });
+      setSelectedDocuments(new Set());
+    }
+    setDeleteDialogOpen(false);
+    setSelectedDocument(null);
+  };
+
+  const toggleDocumentSelection = (docId: string) => {
+    const newSelected = new Set(selectedDocuments);
+    if (newSelected.has(docId)) {
+      newSelected.delete(docId);
+    } else {
+      newSelected.add(docId);
+    }
+    setSelectedDocuments(newSelected);
+  };
+
+  const toggleAllDocuments = () => {
+    if (selectedDocuments.size === paginatedDocuments.length) {
+      setSelectedDocuments(new Set());
+    } else {
+      setSelectedDocuments(new Set(paginatedDocuments.map(doc => doc.id)));
     }
   };
 
@@ -242,6 +262,21 @@ export default function DocumentsPage() {
 
   const handleDocumentAdded = (newDocument: any) => {
     setDocuments([newDocument, ...documents]);
+    setEditingDocument(null);
+  };
+
+  const handleDocumentUpdated = (updatedDocument: any) => {
+    setDocuments(documents.map(doc =>
+      doc.id === updatedDocument.id ? updatedDocument : doc
+    ));
+    setEditingDocument(null);
+  };
+
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      setEditingDocument(null);
+    }
+    setAddDocumentOpen(open);
   };
 
   return (
@@ -316,10 +351,35 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <>
+          {selectedDocuments.size > 0 && (
+            <div className="flex items-center justify-between mb-4 p-4 bg-muted/50 border border-border rounded-lg">
+              <p className="text-sm font-medium text-foreground">
+                {selectedDocuments.size} document{selectedDocuments.size > 1 ? 's' : ''} selected
+              </p>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                data-testid="button-bulk-delete"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Selected
+              </Button>
+            </div>
+          )}
           <Card>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.size === paginatedDocuments.length && paginatedDocuments.length > 0}
+                      onChange={toggleAllDocuments}
+                      className="w-4 h-4 rounded border-border cursor-pointer"
+                      data-testid="checkbox-select-all"
+                    />
+                  </TableHead>
                   <TableHead>
                     <button
                       onClick={() => handleSort('filename')}
@@ -376,6 +436,15 @@ export default function DocumentsPage() {
               <TableBody>
                 {paginatedDocuments.map((doc) => (
                   <TableRow key={doc.id} data-testid={`row-document-${doc.id}`}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedDocuments.has(doc.id)}
+                        onChange={() => toggleDocumentSelection(doc.id)}
+                        className="w-4 h-4 rounded border-border cursor-pointer"
+                        data-testid={`checkbox-${doc.id}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <button
                         onClick={() => handleEditDocument(doc)}
@@ -447,73 +516,28 @@ export default function DocumentsPage() {
         </>
       )}
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent data-testid="dialog-edit-document">
-          <DialogHeader>
-            <DialogTitle>Edit Document</DialogTitle>
-            <DialogDescription>
-              Update the document filename and metadata.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-filename">Filename</Label>
-              <Input
-                id="edit-filename"
-                value={editFilename}
-                onChange={(e) => setEditFilename(e.target.value)}
-                data-testid="input-edit-filename"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setEditDialogOpen(false)}
-              data-testid="button-cancel-edit"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit} data-testid="button-save-edit">
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent data-testid="dialog-delete-document">
-          <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{selectedDocument?.filename}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setDeleteDialogOpen(false)}
-              data-testid="button-cancel-delete"
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-              data-testid="button-confirm-delete"
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title={selectedDocument ? 'Delete Document' : 'Delete Documents'}
+        description={
+          selectedDocument
+            ? `Are you sure you want to delete "${selectedDocument.filename}"?`
+            : `Are you sure you want to delete ${selectedDocuments.size} selected documents?`
+        }
+        itemName={selectedDocument?.filename}
+        itemCount={!selectedDocument ? selectedDocuments.size : undefined}
+      />
 
       <AddDocumentModal
         open={addDocumentOpen}
-        onOpenChange={setAddDocumentOpen}
+        onOpenChange={handleModalClose}
         currentKbId={kbId}
         knowledgeBases={mockKnowledgeBases}
         onDocumentAdded={handleDocumentAdded}
+        onDocumentUpdated={handleDocumentUpdated}
+        editDocument={editingDocument}
       />
     </div>
   );

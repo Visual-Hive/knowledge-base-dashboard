@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,13 +32,23 @@ interface KnowledgeBase {
   title: string;
 }
 
+interface Document {
+  id: string;
+  filename: string;
+  type: string;
+  description?: string;
+  knowledgeBases?: string[];
+  textContent?: string;
+}
+
 interface AddDocumentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentKbId: string;
   knowledgeBases: KnowledgeBase[];
-  onDocumentAdded: (document: any) => void;
-  editDocument?: any | null;
+  onDocumentAdded?: (document: any) => void;
+  onDocumentUpdated?: (document: any) => void;
+  editDocument?: Document | null;
 }
 
 const ACCEPTED_FILE_TYPES = ['.pdf', '.csv', '.mp3', '.mp4', '.wav', '.avi'];
@@ -51,9 +61,11 @@ export default function AddDocumentModal({
   currentKbId,
   knowledgeBases,
   onDocumentAdded,
+  onDocumentUpdated,
   editDocument,
 }: AddDocumentModalProps) {
   const { toast } = useToast();
+  const isEditMode = !!editDocument;
   const [activeTab, setActiveTab] = useState<'upload' | 'text'>('upload');
   const [documentName, setDocumentName] = useState('');
   const [description, setDescription] = useState('');
@@ -65,6 +77,17 @@ export default function AddDocumentModal({
   const [isUploading, setIsUploading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Initialize form with edit document data
+  useEffect(() => {
+    if (editDocument && open) {
+      setDocumentName(editDocument.filename);
+      setDescription(editDocument.description || '');
+      setSelectedKbs(editDocument.knowledgeBases || [currentKbId]);
+      setTextContent(editDocument.textContent || '');
+      setActiveTab(editDocument.type === 'Text Content' ? 'text' : 'upload');
+    }
+  }, [editDocument, open, currentKbId]);
 
   const resetForm = useCallback(() => {
     setDocumentName('');
@@ -154,7 +177,8 @@ export default function AddDocumentModal({
       newErrors.documentName = 'Document name is required';
     }
 
-    if (activeTab === 'upload' && !selectedFile) {
+    // Only require file upload for new documents (not when editing)
+    if (activeTab === 'upload' && !selectedFile && !isEditMode) {
       newErrors.file = 'Please select a file to upload';
     }
 
@@ -189,27 +213,46 @@ export default function AddDocumentModal({
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const fileType = activeTab === 'upload'
-      ? selectedFile?.name.split('.').pop()?.toUpperCase() || 'FILE'
+      ? selectedFile?.name.split('.').pop()?.toUpperCase() || editDocument?.type || 'FILE'
       : 'Text Content';
 
-    const newDocument = {
-      id: Date.now().toString(),
-      filename: documentName,
-      type: fileType,
-      description,
-      createdBy: 'current-user@visualhive.com',
-      createdDate: new Date().toISOString().split('T')[0],
-      lastUpdated: new Date().toISOString().split('T')[0],
-      knowledgeBases: selectedKbs,
-      textContent: activeTab === 'text' ? textContent : undefined,
-    };
+    if (isEditMode && editDocument) {
+      const updatedDocument = {
+        ...editDocument,
+        filename: documentName,
+        type: fileType,
+        description,
+        lastUpdated: new Date().toISOString().split('T')[0],
+        knowledgeBases: selectedKbs,
+        textContent: activeTab === 'text' ? textContent : editDocument.textContent,
+      };
 
-    onDocumentAdded(newDocument);
+      onDocumentUpdated?.(updatedDocument);
 
-    toast({
-      title: 'Document added successfully',
-      description: `"${documentName}" has been added to ${selectedKbs.length} knowledge base${selectedKbs.length > 1 ? 's' : ''}.`,
-    });
+      toast({
+        title: 'Document updated successfully',
+        description: `"${documentName}" has been updated.`,
+      });
+    } else {
+      const newDocument = {
+        id: Date.now().toString(),
+        filename: documentName,
+        type: fileType,
+        description,
+        createdBy: 'current-user@visualhive.com',
+        createdDate: new Date().toISOString().split('T')[0],
+        lastUpdated: new Date().toISOString().split('T')[0],
+        knowledgeBases: selectedKbs,
+        textContent: activeTab === 'text' ? textContent : undefined,
+      };
+
+      onDocumentAdded?.(newDocument);
+
+      toast({
+        title: 'Document added successfully',
+        description: `"${documentName}" has been added to ${selectedKbs.length} knowledge base${selectedKbs.length > 1 ? 's' : ''}.`,
+      });
+    }
 
     setIsUploading(false);
     handleOpenChange(false);
@@ -224,9 +267,13 @@ export default function AddDocumentModal({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-add-document">
           <DialogHeader>
-            <DialogTitle>{editDocument ? 'Edit Document' : 'Add New Document'}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? `Edit Document: ${editDocument?.filename}` : 'Add New Document'}
+            </DialogTitle>
             <DialogDescription>
-              Upload a file or create a text document to add to your knowledge base.
+              {isEditMode
+                ? 'Update your document details and content.'
+                : 'Upload a file or create a text document to add to your knowledge base.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -243,6 +290,16 @@ export default function AddDocumentModal({
             </TabsList>
 
             <TabsContent value="upload" className="space-y-4 mt-4">
+              {isEditMode && editDocument?.type !== 'Text Content' && (
+                <div className="bg-muted/50 border border-border rounded-lg p-4 mb-4">
+                  <p className="text-sm text-foreground">
+                    <strong>Current file:</strong> {editDocument?.filename}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload a new file to replace the existing one
+                  </p>
+                </div>
+              )}
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -457,10 +514,10 @@ export default function AddDocumentModal({
               {isUploading ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />
-                  Uploading...
+                  {isEditMode ? 'Saving...' : 'Uploading...'}
                 </>
               ) : (
-                'Add Document'
+                isEditMode ? 'Save Changes' : 'Add Document'
               )}
             </Button>
           </DialogFooter>
