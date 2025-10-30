@@ -1,6 +1,75 @@
+# Dependencies
 node_modules
+
+# Build outputs
 dist
-.DS_Store
 server/public
-vite.config.ts.*
 *.tar.gz
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+db/data/
+
+# IDE & Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.directory
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing & Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.vite/
+
+# Build configuration variants
+vite.config.ts.*
+
+# Backup files
+*.bak
+*.backup
